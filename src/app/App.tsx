@@ -170,6 +170,7 @@ export default function App() {
     localStorage.getItem('avr-audience-v1') === 'Analyst' ? 'Analyst' : 'Commander',
   );
   const [scenario, setScenario] = useState<ScenarioId>('corroboration');
+  const [scenarioSet, setScenarioSet] = useState<ScenarioId[]>(scenarioIds);
   const [task, setTask] = useState<AnalyticTask>(SCENARIOS.corroboration.task);
   const [taskPreset, setTaskPreset] = useState<MdmpTaskPresetId>(initialPreset);
   const [missionContext, setMissionContext] = useState<MissionContext>(loadMissionContext);
@@ -178,11 +179,12 @@ export default function App() {
   const [selectedId, setSelectedId] = useState('');
   const [chartId, setChartId] = useState('');
   const [showProfile, setShowProfile] = useState(false);
-  const [showAlternatives, setShowAlternatives] = useState(false);
+  const [showAlternatives, setShowAlternatives] = useState(true);
   const [showEvidence, setShowEvidence] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
   const [showMethod, setShowMethod] = useState(false);
   const [showDetailed, setShowDetailed] = useState(false);
+  const [showExpandedChart, setShowExpandedChart] = useState(false);
   const [parallelRanges, setParallelRanges] = useState<DimensionRanges>(
     createDefaultParallelRanges,
   );
@@ -381,6 +383,11 @@ export default function App() {
     setFeedback('');
     startTime.current = Date.now();
     track('scenario', id);
+  };
+  const moveScenario = (direction: -1 | 1) => {
+    const currentIndex = scenarioSet.indexOf(scenario);
+    const next = scenarioSet[currentIndex + direction];
+    if (next) chooseScenario(next);
   };
   const reset = () => {
     setScenario('corroboration');
@@ -604,6 +611,40 @@ export default function App() {
             options={scenarioIds.map((id) => ({ value: id, label: SCENARIOS[id].label }))}
             onChange={chooseScenario}
           />
+          <details className="scenario-set-control">
+            <summary>Build a scenario set ({scenarioSet.length} selected)</summary>
+            <p className="help">Choose scenarios for a multi scenario participant session.</p>
+            {scenarioIds.map((id) => (
+              <label className="scenario-option" key={id}>
+                <input
+                  type="checkbox"
+                  checked={scenarioSet.includes(id)}
+                  disabled={id === scenario}
+                  onChange={(event) => {
+                    setScenarioSet((old) => {
+                      const next = event.target.checked
+                        ? [...old, id]
+                        : old.filter((value) => value !== id);
+                      return scenarioIds.filter((value) => next.includes(value));
+                    });
+                    track('scenario_set', `${id}:${event.target.checked ? 'add' : 'remove'}`);
+                  }}
+                />
+                <span>{SCENARIOS[id].label}</span>
+              </label>
+            ))}
+            <div className="button-row">
+              <button className="button secondary" type="button" disabled={!scenarioSet.includes(scenario) || scenarioSet.indexOf(scenario) === 0} onClick={() => moveScenario(-1)}>
+                Previous scenario
+              </button>
+              <button className="button secondary" type="button" disabled={!scenarioSet.includes(scenario) || scenarioSet.indexOf(scenario) === scenarioSet.length - 1} onClick={() => moveScenario(1)}>
+                Next scenario
+              </button>
+            </div>
+            <p className="help" role="status">
+              {scenarioSet.length ? `Scenario ${scenarioSet.indexOf(scenario) + 1} of ${scenarioSet.length} · ${SCENARIOS[scenario].label}` : 'Select at least one scenario.'}
+            </p>
+          </details>
           <button className="button ghost" onClick={reset}>
             <RotateCcw size={16} /> Reset app
           </button>
@@ -1121,7 +1162,7 @@ export default function App() {
                 <div className="section-title">
                   <h2>Ranked options</h2>
                   <span className="pill">
-                    {audience === 'Commander' ? 'Top 3' : 'Top 5'} · active chart stays explicit
+                    {recommendations.length} compatible types · ranked by task fit
                   </span>
                 </div>
                 <p className="help">
@@ -1163,7 +1204,7 @@ export default function App() {
                     type="button"
                     onClick={() => setShowAlternatives((value) => !value)}
                   >
-                    {showAlternatives ? 'Show fewer options' : 'Show remaining alternatives'}
+                    {showAlternatives ? 'Show fewer options' : 'Show all visualization types'}
                   </button>
                 )}
                 {feedbackStatus && (
@@ -1226,6 +1267,9 @@ export default function App() {
                       {selectedChart?.rationale[0]}
                     </p>
                   </div>
+                  <button className="button secondary" type="button" disabled={!selectedChart || rows.length === 0} onClick={() => setShowExpandedChart(true)}>
+                    Expand chart
+                  </button>
                 </div>
                 {rows.length > 0 && selectedChart?.chartPattern === 'parallel_coordinates' ? (
                   <ParallelCoordinates
@@ -1265,6 +1309,27 @@ export default function App() {
                   </button>
                 </details>
               </section>
+              {showExpandedChart && selectedChart && (
+                <div className="chart-modal-backdrop" role="presentation" onMouseDown={(event) => {
+                  if (event.target === event.currentTarget) setShowExpandedChart(false);
+                }}>
+                  <section className="chart-modal panel" role="dialog" aria-modal="true" aria-labelledby="expanded-chart-title">
+                    <div className="section-title">
+                      <div>
+                        <h2 id="expanded-chart-title">{selectedChart.title}</h2>
+                        <p>{selectedChart.technique} · {selectedChart.unitOfAnalysis}</p>
+                      </div>
+                      <button className="button secondary" type="button" onClick={() => setShowExpandedChart(false)}>Close</button>
+                    </div>
+                    {selectedChart.chartPattern === 'parallel_coordinates' ? (
+                      <ParallelCoordinates records={chartData} selectedId={selectedId} audience={audience} ranges={parallelRanges} onRangesChange={setParallelRanges} onSelect={selectReport} />
+                    ) : (
+                      <VegaChart spec={selectedChart.vegaLiteSpec} onSelect={selectReport} onSelectDatum={selectChartDatum} onBrush={brush} ariaLabel={`${selectedChart.technique}. ${selectedChart.title}`} />
+                    )}
+                    <p className="caption">{selectedChart.cautions[0]} Select a mark to inspect its report in the evidence panel.</p>
+                  </section>
+                </div>
+              )}
               <details className="panel evidence-matrix-panel" open={audience === 'Analyst'}>
                 <summary>Evidence-quality matrix and provenance links</summary>
                 <EvidenceQualityMatrix

@@ -24,12 +24,12 @@ type Datum = Report & {
 };
 
 const patterns: Record<AnalyticTask, ChartPattern[]> = {
-  compare_categories: ['dot_plot', 'table_detail', 'bar'],
-  analyze_trends: ['line', 'table_detail'],
-  detect_anomalies: ['line', 'table_detail'],
-  examine_source_conflict: ['dot_plot', 'table_detail', 'heatmap', 'parallel_coordinates'],
-  assess_confidence: ['error_bar', 'scatter', 'table_detail', 'parallel_coordinates'],
-  explore_provenance: ['observation_timeline', 'table_detail', 'scatter'],
+  compare_categories: ['dot_plot', 'bar', 'heatmap', 'scatter', 'error_bar', 'table_detail', 'parallel_coordinates'],
+  analyze_trends: ['line', 'area', 'bar', 'heatmap', 'observation_timeline', 'table_detail'],
+  detect_anomalies: ['line', 'area', 'scatter', 'heatmap', 'parallel_coordinates', 'table_detail'],
+  examine_source_conflict: ['dot_plot', 'heatmap', 'scatter', 'bar', 'parallel_coordinates', 'table_detail'],
+  assess_confidence: ['error_bar', 'scatter', 'heatmap', 'dot_plot', 'parallel_coordinates', 'table_detail'],
+  explore_provenance: ['observation_timeline', 'line', 'area', 'scatter', 'heatmap', 'table_detail'],
 };
 
 const requiredFields: Record<ChartPattern, string[]> = {

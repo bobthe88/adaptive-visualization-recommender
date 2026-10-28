@@ -519,3 +519,41 @@ a:focus-visible {
     width: 100%;
   }
 }
+.scenario-set-control {
+  min-width: 200px;
+  max-width: 340px;
+  padding: 8px 10px;
+  border: 1px solid #dce4ec;
+  border-radius: 8px;
+  background: #fff;
+  font-size: .76rem;
+}
+.app-shell .scenario-set-control { background: var(--surface-panel, #fff); border-color: var(--border-subtle, #dce4ec); }
+.app-shell .scenario-set-control summary { color: var(--text-primary, #31557d); }
+
+.scenario-set-control summary { cursor: pointer; font-weight: 700; color: #31557d; }
+.scenario-option { display: flex; align-items: center; gap: 7px; padding: 5px 0; }
+.scenario-option input { accent-color: #416aa5; }
+.chart-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(8 15 26 / 78%);
+}
+.chart-modal {
+  width: min(1200px, 96vw);
+  max-height: 92vh;
+  overflow: auto;
+  background: var(--surface-panel, #fff);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 35%);
+}
+.chart-modal .chart { min-height: 58vh; }
+
+@media (max-width: 780px) {
+  .scenario-set-control { max-width: none; margin: 10px 0; }
+  .chart-modal-backdrop { padding: 10px; }
+  .chart-modal { width: 100%; max-height: 96vh; }
+}
